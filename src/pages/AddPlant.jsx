@@ -1,275 +1,272 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { getAuth } from 'firebase/auth';
-import {
-    getStorage,
-    ref as sRef,
-    uploadBytes,
-    getDownloadURL,
-} from 'firebase/storage';
-import {
-    getFirestore,
-    collection,
-    addDoc,
-} from 'firebase/firestore';
-import { FaCalendarAlt, FaCamera } from 'react-icons/fa';
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { v4 as uuidv4 } from "uuid";
+import { storage, db } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { collection, addDoc } from "firebase/firestore";
+import { LuCalendarDays } from "react-icons/lu";
+import placeholder from "../assets/placeholder.png";
 
-export default function AddPlant() {
+const AddPlant = () => {
     const navigate = useNavigate();
-    const auth = getAuth();
-    const storage = getStorage();
-    const db = getFirestore();
 
-    const [imageFile, setImageFile] = useState(null);
-    const [preview, setPreview] = useState('/placeholder.png');
-    const [loadingAI, setLoadingAI] = useState(false);
-    const [form, setForm] = useState({
-        commonName: '',
-        botanicalName: '',
-        plantType: '',
-        watering: '',
-        sunlight: '',
-        soil: '',
-        fertilizer: '',
-        seasonality: '',
+    const [formData, setFormData] = useState({
+        commonName: "",
+        botanicalName: "",
+        plantType: "",
+        watering: "",
+        sunlight: "",
+        soil: "",
+        fertilizer: "",
+        seasonality: "",
         seasonalMonths: [],
-        notes: '',
+        notes: "",
+        image: "",
     });
 
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const [file, setFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(placeholder);
+    const [loadingAI, setLoadingAI] = useState(false);
 
-    // Handle field changes
-    const handleChange = e => {
-        const { name, value } = e.target;
-        setForm(f => ({ ...f, [name]: value }));
+    const months = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // Handle image upload & preview
-    const handleImageChange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        setImageFile(file);
-        setPreview(URL.createObjectURL(file));
+    const handleMonthToggle = (month) => {
+        const updated = formData.seasonalMonths.includes(month)
+            ? formData.seasonalMonths.filter((m) => m !== month)
+            : [...formData.seasonalMonths, month];
+        setFormData({ ...formData, seasonalMonths: updated });
     };
 
-    // Toggle month selection
-    const toggleMonth = m => {
-        setForm(f => ({
-            ...f,
-            seasonalMonths: f.seasonalMonths.includes(m)
-                ? f.seasonalMonths.filter(x => x !== m)
-                : [...f.seasonalMonths, m],
-        }));
-    };
-
-    // Call AI to fill fields
-    const handleAISuggest = async () => {
-        if (!form.commonName.trim()) {
-            alert('Enter Common Name first');
-            return;
+    const handleImageChange = (e) => {
+        const selected = e.target.files[0];
+        if (selected) {
+            setFile(selected);
+            setImagePreview(URL.createObjectURL(selected));
         }
+    };
+
+    const handleAISuggestions = async () => {
+        if (!formData.commonName) return alert("Please enter a common name first");
         setLoadingAI(true);
         try {
-            const res = await axios.post('http://localhost:5000/suggest', {
-                plantName: form.commonName,
+            const res = await axios.post("http://localhost:5000/suggest", {
+                plantName: formData.commonName,
             });
-            const s = res.data.suggestions;
-            setForm(f => ({
-                ...f,
-                botanicalName: s.scientific_name || '',
-                plantType: s.plant_type || '',
-                watering: s.watering || '',
-                sunlight: s.sunlight || '',
-                soil: s.soil || '',
-                fertilizer: s.fertilizer || '',
-                seasonality: s.seasonality || '',
-                notes: s.uses_notes || '',
+            const data = res.data.suggestions;
+            setFormData((prev) => ({
+                ...prev,
+                botanicalName: data.scientific_name || "",
+                watering: data.watering || "",
+                sunlight: data.sunlight || "",
+                soil: data.soil || "",
+                seasonality: data.seasonality || "",
+                notes: data.uses_notes || "",
+                image: data.image || "",
             }));
-            setPreview(s.image || '/placeholder.png');
+            setImagePreview(data.image || placeholder);
         } catch (err) {
-            console.error(err);
-            alert('AI suggestion failed');
+            alert("Failed to get AI suggestion");
         }
         setLoadingAI(false);
     };
 
-    // Save to Firestore + Storage
-    const handleSubmit = async e => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const user = auth.currentUser;
-        if (!user) {
-            alert('Please log in first');
-            return;
-        }
-
-        let imageURL = preview;
-        if (imageFile) {
-            const path = `plants/${user.uid}/${Date.now()}_${imageFile.name}`;
-            const r = sRef(storage, path);
-            await uploadBytes(r, imageFile);
-            imageURL = await getDownloadURL(r);
-        }
-
-        const data = {
-            ...form,
-            image: imageURL,
-            userId: user.uid,
-            savedAt: new Date().toISOString(),
-        };
-
         try {
-            await addDoc(collection(db, 'users', user.uid, 'plants'), data);
-            alert('Plant added successfully!');
-            navigate('/dashboard');
-        } catch (err) {
-            console.error(err);
-            alert('Failed to save plant');
+            let imageURL = formData.image;
+
+            if (file) {
+                const imgRef = ref(storage, `plants/${uuidv4()}-${file.name}`);
+                await uploadBytes(imgRef, file);
+                imageURL = await getDownloadURL(imgRef);
+            }
+
+            const newPlant = { ...formData, image: imageURL };
+            await addDoc(collection(db, "plants"), newPlant);
+            navigate("/");
+        } catch {
+            alert("Failed to save plant");
         }
     };
 
     return (
-        <div className="min-h-screen bg-green-50 py-6 px-4">
-            <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
-                <h1 className="text-2xl font-bold text-green-800 mb-6 text-center">
-                    Add New Plant
-                </h1>
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* Image + Upload Button */}
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="max-w-3xl mx-auto p-4">
+            <h2 className="text-2xl font-bold text-green-700 mb-2">Add New Plant</h2>
+            <div className="bg-white p-6 rounded-xl shadow">
+                {/* Top section */}
+                <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
+                    <div className="text-center">
                         <img
-                            src={preview}
-                            alt="Preview"
-                            className="w-24 h-24 object-cover rounded-lg border"
+                            src={imagePreview}
+                            alt="Plant"
+                            className="w-28 h-28 object-contain rounded mx-auto"
                         />
-                        <label className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-green-700">
-                            <FaCamera />
-                            Upload Photo
+                        <p className="text-sm mt-2 text-gray-600">Plant Image</p>
+                    </div>
+                    <div className="flex flex-col justify-center">
+                        <label className="cursor-pointer border-2 border-dashed border-gray-400 px-6 py-4 text-center text-gray-600 hover:bg-gray-50 rounded-md">
+                            <span className="block text-sm">Upload Photo</span>
                             <input
                                 type="file"
                                 accept="image/*"
                                 capture="environment"
-                                onChange={handleImageChange}
                                 className="hidden"
+                                onChange={handleImageChange}
                             />
                         </label>
                     </div>
+                </div>
 
-                    {/* Common Name + AI Suggest */}
-                    <div className="flex flex-col sm:flex-row gap-2">
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium">Common Name*</label>
                         <input
-                            type="text"
                             name="commonName"
-                            value={form.commonName}
+                            value={formData.commonName}
                             onChange={handleChange}
-                            placeholder="Common Name *"
                             required
-                            className="flex-1 border rounded px-3 py-2"
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            placeholder="e.g. Tulsi"
                         />
+                    </div>
+                    <div>
                         <button
                             type="button"
-                            onClick={handleAISuggest}
-                            disabled={loadingAI}
-                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                            onClick={handleAISuggestions}
+                            className="text-blue-600 border border-blue-400 bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded w-full"
                         >
-                            {loadingAI ? 'Loading...' : 'Generate AI Suggestions'}
+                            {loadingAI ? "🔄 Generating..." : "🔍 Generate AI Suggestions"}
                         </button>
                     </div>
-
-                    {/* Rest of the fields */}
-                    <input
-                        type="text"
-                        name="botanicalName"
-                        value={form.botanicalName}
-                        onChange={handleChange}
-                        placeholder="Botanical Name"
-                        className="w-full border rounded px-3 py-2"
-                    />
-                    <input
-                        type="text"
-                        name="plantType"
-                        value={form.plantType}
-                        onChange={handleChange}
-                        placeholder="Plant Type"
-                        className="w-full border rounded px-3 py-2"
-                    />
-                    <input
-                        type="text"
-                        name="watering"
-                        value={form.watering}
-                        onChange={handleChange}
-                        placeholder="Watering"
-                        className="w-full border rounded px-3 py-2"
-                    />
-                    <input
-                        type="text"
-                        name="sunlight"
-                        value={form.sunlight}
-                        onChange={handleChange}
-                        placeholder="Sunlight"
-                        className="w-full border rounded px-3 py-2"
-                    />
-                    <input
-                        type="text"
-                        name="soil"
-                        value={form.soil}
-                        onChange={handleChange}
-                        placeholder="Soil"
-                        className="w-full border rounded px-3 py-2"
-                    />
-                    <input
-                        type="text"
-                        name="fertilizer"
-                        value={form.fertilizer}
-                        onChange={handleChange}
-                        placeholder="Fertilizer"
-                        className="w-full border rounded px-3 py-2"
-                    />
-                    <input
-                        type="text"
-                        name="seasonality"
-                        value={form.seasonality}
-                        onChange={handleChange}
-                        placeholder="Seasonality"
-                        className="w-full border rounded px-3 py-2"
-                    />
-
-                    {/* Seasonal Months */}
                     <div>
-                        <label className="block mb-2 font-semibold">Seasonal Months</label>
-                        <div className="grid grid-cols-6 gap-2">
-                            {months.map(m => (
+                        <label className="block text-sm font-medium">Botanical Name*</label>
+                        <input
+                            name="botanicalName"
+                            value={formData.botanicalName}
+                            onChange={handleChange}
+                            required
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            placeholder="e.g. Ocimum sanctum"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Plant Type</label>
+                        <select
+                            name="plantType"
+                            value={formData.plantType}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                        >
+                            <option value="">Select plant type</option>
+                            {["Tree", "Shrub", "Herb", "Vine", "Grass", "Succulent", "Aquatic", "Other"].map((type) => (
+                                <option key={type}>{type}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium">Watering</label>
+                            <input
+                                name="watering"
+                                value={formData.watering}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                placeholder="e.g. Weekly"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Sunlight</label>
+                            <select
+                                name="sunlight"
+                                value={formData.sunlight}
+                                onChange={handleChange}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                            >
+                                <option value="">Select</option>
+                                <option>Full Sun</option>
+                                <option>Partial Sun</option>
+                                <option>Shade</option>
+                                <option>Indirect Light</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium">Soil</label>
+                        <input
+                            name="soil"
+                            value={formData.soil}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            placeholder="e.g. Sandy, Well-drained"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Fertilizer</label>
+                        <input
+                            name="fertilizer"
+                            value={formData.fertilizer}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            placeholder="e.g. Monthly"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium">Seasonality</label>
+                        <input
+                            name="seasonality"
+                            value={formData.seasonality}
+                            onChange={handleChange}
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            placeholder="e.g. Perennial"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Seasonal Months</label>
+                        <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                            {months.map((month) => (
                                 <button
-                                    key={m}
+                                    key={month}
                                     type="button"
-                                    onClick={() => toggleMonth(m)}
-                                    className={`flex items-center gap-1 px-2 py-1 text-sm rounded border ${form.seasonalMonths.includes(m)
-                                            ? 'bg-green-100 border-green-400'
-                                            : 'border-gray-300'
+                                    onClick={() => handleMonthToggle(month)}
+                                    className={`border rounded px-2 py-1 flex items-center justify-center gap-1 ${formData.seasonalMonths.includes(month)
+                                        ? "bg-green-100 border-green-500"
+                                        : "bg-white"
                                         }`}
                                 >
-                                    <FaCalendarAlt className="text-gray-600" />
-                                    {m}
+                                    <LuCalendarDays className="text-gray-600" />
+                                    {month}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Notes */}
-                    <textarea
-                        name="notes"
-                        value={form.notes}
-                        onChange={handleChange}
-                        placeholder="Uses / Notes"
-                        rows="3"
-                        className="w-full border rounded px-3 py-2"
-                    />
+                    <div>
+                        <label className="block text-sm font-medium">Uses & Notes</label>
+                        <textarea
+                            name="notes"
+                            value={formData.notes}
+                            onChange={handleChange}
+                            rows="3"
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            placeholder="e.g. Medicinal, spiritual use"
+                        />
+                    </div>
 
-                    {/* Submit */}
                     <button
                         type="submit"
-                        className="w-full bg-green-700 text-white py-3 rounded font-semibold hover:bg-green-800"
+                        className="bg-green-600 hover:bg-green-500 text-white font-semibold px-6 py-3 rounded-full w-full"
                     >
                         Add Plant
                     </button>
@@ -277,4 +274,6 @@ export default function AddPlant() {
             </div>
         </div>
     );
-}
+};
+
+export default AddPlant;

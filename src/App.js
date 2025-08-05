@@ -1,32 +1,72 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Header from './components/Header';
-import BottomNav from './components/BottomNav';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import Dashboard from './pages/Dashboard';
-import AddPlant from './pages/AddPlant';
-import Search from './pages/Search';
-import PlantDetail from './pages/PlantDetail';
-import About from './pages/About';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import AddPlant from "./pages/AddPlant";
+import Search from "./pages/Search";
+import About from "./pages/About";
+import SinglePlant from "./pages/SinglePlant";
+import Layout from "./components/Layout";
 
 function App() {
   return (
     <Router>
-      <Header />
-      <div className="pt-16 pb-24"> {/* padding for fixed header/footer */}
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/new" element={<AddPlant />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/plant/:id" element={<PlantDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </div>
-      <BottomNav />
+      <Routes>
+        {/* Pages without layout (like login/signup) */}
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+
+        {/* Pages with layout */}
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <Dashboard />
+            </Layout>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <Layout>
+              <Dashboard />
+            </Layout>
+          }
+        />
+        <Route
+          path="/new"
+          element={
+            <Layout>
+              <AddPlant />
+            </Layout>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <Layout>
+              <Search />
+            </Layout>
+          }
+        />
+        <Route
+          path="/about"
+          element={
+            <Layout>
+              <About />
+            </Layout>
+          }
+        />
+        <Route
+          path="/plant/:id"
+          element={
+            <Layout>
+              <SinglePlant />
+            </Layout>
+          }
+        />
+      </Routes>
     </Router>
   );
 }

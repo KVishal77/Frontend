@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { getApp } from "firebase/app";
-import Header from "../components/Header";
+import Layout from "../components/Layout";
 import BottomNav from "../components/BottomNav";
 import { QRCodeCanvas } from "qrcode.react";
 
@@ -33,7 +33,7 @@ const SinglePlant = () => {
 
     return (
         <div className="min-h-screen bg-white text-gray-900 flex flex-col">
-            <Header />
+            <Layout />
             <div className="flex-1 p-4">
                 <img
                     src={plant.imageUrl}
