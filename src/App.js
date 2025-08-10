@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -8,64 +8,70 @@ import Search from "./pages/Search";
 import About from "./pages/About";
 import SinglePlant from "./pages/SinglePlant";
 import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute"; // ✅ already added
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Pages without layout (like login/signup) */}
+        {/* 🔓 Public Pages */}
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Pages with layout */}
-        <Route
-          path="/"
-          element={
-            <Layout>
-              <Dashboard />
-            </Layout>
-          }
-        />
+        {/* 🔒 Protected Pages (need login) */}
         <Route
           path="/dashboard"
           element={
-            <Layout>
-              <Dashboard />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Dashboard />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/new"
           element={
-            <Layout>
-              <AddPlant />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <AddPlant />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/search"
           element={
-            <Layout>
-              <Search />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <Search />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/about"
           element={
-            <Layout>
-              <About />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <About />
+              </Layout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/plant/:id"
           element={
-            <Layout>
-              <SinglePlant />
-            </Layout>
+            <ProtectedRoute>
+              <Layout>
+                <SinglePlant />
+              </Layout>
+            </ProtectedRoute>
           }
         />
+
+        {/* ✅ Redirect default / to /login */}
+        <Route path="/" element={<Navigate to="/login" />} />
       </Routes>
     </Router>
   );
