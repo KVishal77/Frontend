@@ -13,7 +13,7 @@ export default function Header() {
     return (
         <div className="bg-green-500 text-white px-4 py-3 flex justify-between items-center">
             <h1 className="text-xl font-bold flex items-center gap-2">
-                🌿 Rooted
+                Rooted
             </h1>
             <div className="flex items-center gap-4">
                 {user && <span className="text-sm">{user.email}</span>}

@@ -24,7 +24,7 @@ const Layout = ({ children }) => {
             {/* Green Header */}
             <header className="bg-green-600 text-white flex justify-between items-center p-4 shadow">
                 <h1 className="text-xl font-bold flex items-center">
-                    🌿 Rooted
+                    Rooted
                 </h1>
                 {user && (
                     <div className="flex items-center space-x-4">

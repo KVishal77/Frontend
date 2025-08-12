@@ -8,6 +8,9 @@ import { collection, addDoc } from "firebase/firestore";
 import { LuCalendarDays } from "react-icons/lu";
 import placeholder from "../assets/placeholder.png";
 
+// Env-based API
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 const AddPlant = () => {
     const navigate = useNavigate();
 
@@ -57,7 +60,7 @@ const AddPlant = () => {
         if (!formData.commonName) return alert("Please enter a common name first");
         setLoadingAI(true);
         try {
-            const res = await axios.post("http://localhost:5000/suggest", {
+            const res = await axios.post(`${API_BASE}/suggest`, {
                 plantName: formData.commonName,
             });
             const data = res.data.suggestions;
@@ -72,7 +75,7 @@ const AddPlant = () => {
                 image: data.image || "",
             }));
             setImagePreview(data.image || placeholder);
-        } catch (err) {
+        } catch {
             alert("Failed to get AI suggestion");
         }
         setLoadingAI(false);
@@ -241,8 +244,8 @@ const AddPlant = () => {
                                     type="button"
                                     onClick={() => handleMonthToggle(month)}
                                     className={`border rounded px-2 py-1 flex items-center justify-center gap-1 ${formData.seasonalMonths.includes(month)
-                                        ? "bg-green-100 border-green-500"
-                                        : "bg-white"
+                                            ? "bg-green-100 border-green-500"
+                                            : "bg-white"
                                         }`}
                                 >
                                     <LuCalendarDays className="text-gray-600" />

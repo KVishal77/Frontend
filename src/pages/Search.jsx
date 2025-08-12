@@ -1,7 +1,22 @@
-import React, { useRef, useState } from 'react'; import axios from 'axios'; import { QRCodeSVG } from 'qrcode.react'; import { auth, db } from '../firebase'; import { doc, setDoc } from 'firebase/firestore'; import { v4 as uuidv4 } from 'uuid'; import { useNavigate } from 'react-router-dom';
+import React, { useRef, useState } from "react";
+import axios from "axios";
+import { QRCodeSVG } from "qrcode.react";
+import { auth, db } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
+import { useNavigate } from "react-router-dom";
+
+// Env-based API
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 const Search = () => {
-    const [query, setQuery] = useState(''); const [plantData, setPlantData] = useState(null); const [loading, setLoading] = useState(false); const [qrGenerated, setQrGenerated] = useState(false); const [qrCodeValue, setQrCodeValue] = useState(''); const qrRef = useRef(null); const navigate = useNavigate();
+    const [query, setQuery] = useState("");
+    const [plantData, setPlantData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [qrGenerated, setQrGenerated] = useState(false);
+    const [qrCodeValue, setQrCodeValue] = useState("");
+    const qrRef = useRef(null);
+    const navigate = useNavigate();
 
     const handleSearch = async () => {
         if (!query.trim()) return;
@@ -9,16 +24,19 @@ const Search = () => {
         setPlantData(null);
         setQrGenerated(false);
         try {
-            const response = await axios.post('http://localhost:5000/suggest', { plantName: query });
+            const response = await axios.post(`${API_BASE}/suggest`, {
+                plantName: query,
+            });
             const data = response.data.suggestions;
 
-            if (!data.image || !data.image.includes('wikimedia')) {
-                data.image = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Plant_icon.svg/512px-Plant_icon.svg.png';
+            if (!data.image || !data.image.includes("wikimedia")) {
+                data.image =
+                    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Plant_icon.svg/512px-Plant_icon.svg.png";
             }
 
             setPlantData({ ...data, name: query });
         } catch (error) {
-            alert('Error fetching plant data.');
+            alert("Error fetching plant data.");
         } finally {
             setLoading(false);
         }
@@ -33,19 +51,19 @@ const Search = () => {
             ...plantData,
             timestamp: new Date().toISOString(),
         };
-        await setDoc(doc(db, 'users', user.uid, 'plants', id), plant);
+        await setDoc(doc(db, "users", user.uid, "plants", id), plant);
         setQrCodeValue(JSON.stringify(plant));
         setQrGenerated(true);
     };
 
     const handleDownloadQR = () => {
-        const svg = qrRef.current.querySelector('svg');
+        const svg = qrRef.current.querySelector("svg");
         const svgData = new XMLSerializer().serializeToString(svg);
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
 
         const img = new Image();
-        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
         const url = URL.createObjectURL(svgBlob);
 
         img.onload = () => {
@@ -54,10 +72,10 @@ const Search = () => {
             ctx.drawImage(img, 0, 0);
             URL.revokeObjectURL(url);
 
-            const pngUrl = canvas.toDataURL('image/png');
-            const downloadLink = document.createElement('a');
+            const pngUrl = canvas.toDataURL("image/png");
+            const downloadLink = document.createElement("a");
             downloadLink.href = pngUrl;
-            downloadLink.download = 'plant-qr.png';
+            downloadLink.download = "plant-qr.png";
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
@@ -68,8 +86,8 @@ const Search = () => {
 
     return (
         <div className="p-4 max-w-3xl mx-auto mt-4 overflow-y-auto pb-24">
-            <button onClick={() => navigate('/')} className="text-green-700 text-sm mb-2">
-                {'<'} Back to all plants
+            <button onClick={() => navigate("/")} className="text-green-700 text-sm mb-2">
+                {"<"} Back to all plants
             </button>
             <h1 className="text-2xl font-bold text-center mb-4 text-green-800">Search Plant</h1>
 
@@ -86,7 +104,7 @@ const Search = () => {
                     onClick={handleSearch}
                     className="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded mb-4"
                 >
-                    {loading ? 'Searching...' : 'Search with AI'}
+                    {loading ? "Searching..." : "Search with AI"}
                 </button>
 
                 {plantData && (
@@ -138,10 +156,7 @@ const Search = () => {
                                     <div className="flex justify-center mb-2">
                                         <QRCodeSVG value={qrCodeValue} />
                                     </div>
-                                    <button
-                                        onClick={handleDownloadQR}
-                                        className="text-blue-600 underline"
-                                    >
+                                    <button onClick={handleDownloadQR} className="text-blue-600 underline">
                                         ⬇️ Download QR Code
                                     </button>
                                 </>
@@ -159,7 +174,6 @@ const Search = () => {
             </div>
         </div>
     );
-
 };
 
 export default Search;
