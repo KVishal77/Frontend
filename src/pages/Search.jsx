@@ -5,9 +5,10 @@ import { auth, db } from "../firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../api/plantAPI";
 
-// Env-based API
-const API_BASE = process.env.REACT_APP_API_URL || "https://api.plantshazam.com/";
+// API from env (no trailing slash)
+const BASE = API_BASE;
 
 const Search = () => {
     const [query, setQuery] = useState("");
@@ -24,18 +25,15 @@ const Search = () => {
         setPlantData(null);
         setQrGenerated(false);
         try {
-            const response = await axios.post(`${API_BASE}/suggest`, {
-                plantName: query,
-            });
+            const response = await axios.post(`${BASE}/suggest`, { plantName: query });
             const data = response.data.suggestions;
 
-            if (!data.image || !data.image.includes("wikimedia")) {
+            if (!data.image || !data.image.includes("wikimedia") || data.image.endsWith(".svg")) {
                 data.image =
                     "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Plant_icon.svg/512px-Plant_icon.svg.png";
             }
-
             setPlantData({ ...data, name: query });
-        } catch (error) {
+        } catch {
             alert("Error fetching plant data.");
         } finally {
             setLoading(false);
@@ -73,12 +71,12 @@ const Search = () => {
             URL.revokeObjectURL(url);
 
             const pngUrl = canvas.toDataURL("image/png");
-            const downloadLink = document.createElement("a");
-            downloadLink.href = pngUrl;
-            downloadLink.download = "plant-qr.png";
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
+            const link = document.createElement("a");
+            link.href = pngUrl;
+            link.download = "plant-qr.png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         };
 
         img.src = url;

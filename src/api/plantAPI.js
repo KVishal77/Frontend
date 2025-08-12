@@ -1,24 +1,29 @@
 import axios from "axios";
 
-const API_BASE = "https://api.plantshazam.com/";
+// env + trailing slash safe
+export const API_BASE = (process.env.REACT_APP_API_URL || "https://api.plantshazam.com").replace(/\/+$/, "");
+
+const api = axios.create({
+    baseURL: API_BASE,
+    timeout: 20000,
+});
 
 export async function getSuggestion(plantName) {
-    const res = await axios.post(`${API_BASE}/suggest`, { plantName });
-    return res.data.suggestions;
+    const { data } = await api.post("/suggest", { plantName });
+    return data.suggestions;
 }
 
 export async function generateQR(url) {
-    const res = await axios.post(`${API_BASE}/generateQR`, { url });
-    return res.data.qr;
+    const { data } = await api.post("/generateQR", { url });
+    return data.qr;
 }
 
 export async function savePlant(plantData) {
-    const res = await axios.post(`${API_BASE}/save`, plantData);
-    return res.data.id;
+    const { data } = await api.post("/save", plantData);
+    return data.id;
 }
+
 export async function searchPlantByName(name) {
-    const res = await axios.get(`${API_BASE}/getbyname`, {
-        params: { name },
-    });
-    return res.data;
+    const { data } = await api.get("/getbyname", { params: { name } });
+    return data;
 }

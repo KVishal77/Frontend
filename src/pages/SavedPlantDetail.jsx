@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 function SavedPlantDetail() {
     const { id } = useParams();
@@ -12,15 +12,9 @@ function SavedPlantDetail() {
             const user = auth.currentUser;
             if (!user) return;
 
-            try {
-                const res = await axios.get(`https://api.plantshazam.com/plants/${user.uid}`);
-                const match = res.data.find(p => p.id === id);
-                setPlant(match);
-            } catch (err) {
-                console.error("❌ Error fetching plant:", err);
-            }
+            const snap = await getDoc(doc(db, "users", user.uid, "plants", id));
+            if (snap.exists()) setPlant({ id, ...snap.data() });
         };
-
         fetchPlant();
     }, [id]);
 
@@ -37,15 +31,15 @@ function SavedPlantDetail() {
                     className="w-full h-64 object-cover rounded"
                 />
                 <div className="mt-6 space-y-2">
-                    <h1 className="text-3xl font-bold text-green-800">{plant.name}</h1>
-                    <p className="italic text-gray-600">{plant.scientific_name}</p>
+                    <h1 className="text-3xl font-bold text-green-800">{plant.name || plant.commonName}</h1>
+                    <p className="italic text-gray-600">{plant.scientific_name || plant.botanicalName}</p>
 
                     <div className="mt-4 space-y-2 text-gray-700">
                         <p><strong>Sunlight:</strong> {plant.sunlight}</p>
                         <p><strong>Watering:</strong> {plant.watering}</p>
                         <p><strong>Soil:</strong> {plant.soil}</p>
                         <p><strong>Seasonality:</strong> {plant.seasonality}</p>
-                        <p><strong>Uses / Notes:</strong> {plant.uses_notes}</p>
+                        <p><strong>Uses / Notes:</strong> {plant.uses_notes || plant.notes}</p>
                     </div>
 
                     {plant.qr && (

@@ -7,9 +7,9 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { collection, addDoc } from "firebase/firestore";
 import { LuCalendarDays } from "react-icons/lu";
 import placeholder from "../assets/placeholder.png";
+import { API_BASE } from "../api/plantAPI";
 
-// Env-based API
-const API_BASE = process.env.REACT_APP_API_URL || "https://api.plantshazam.com/";
+const BASE = API_BASE;
 
 const AddPlant = () => {
     const navigate = useNavigate();
@@ -32,10 +32,7 @@ const AddPlant = () => {
     const [imagePreview, setImagePreview] = useState(placeholder);
     const [loadingAI, setLoadingAI] = useState(false);
 
-    const months = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -60,9 +57,7 @@ const AddPlant = () => {
         if (!formData.commonName) return alert("Please enter a common name first");
         setLoadingAI(true);
         try {
-            const res = await axios.post(`${API_BASE}/suggest`, {
-                plantName: formData.commonName,
-            });
+            const res = await axios.post(`${BASE}/suggest`, { plantName: formData.commonName });
             const data = res.data.suggestions;
             setFormData((prev) => ({
                 ...prev,
@@ -104,31 +99,19 @@ const AddPlant = () => {
         <div className="max-w-3xl mx-auto p-4">
             <h2 className="text-2xl font-bold text-green-700 mb-2">Add New Plant</h2>
             <div className="bg-white p-6 rounded-xl shadow">
-                {/* Top section */}
                 <div className="flex flex-col md:flex-row items-center gap-6 mb-6">
                     <div className="text-center">
-                        <img
-                            src={imagePreview}
-                            alt="Plant"
-                            className="w-28 h-28 object-contain rounded mx-auto"
-                        />
+                        <img src={imagePreview} alt="Plant" className="w-28 h-28 object-contain rounded mx-auto" />
                         <p className="text-sm mt-2 text-gray-600">Plant Image</p>
                     </div>
                     <div className="flex flex-col justify-center">
                         <label className="cursor-pointer border-2 border-dashed border-gray-400 px-6 py-4 text-center text-gray-600 hover:bg-gray-50 rounded-md">
                             <span className="block text-sm">Upload Photo</span>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                className="hidden"
-                                onChange={handleImageChange}
-                            />
+                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
                         </label>
                     </div>
                 </div>
 
-                {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium">Common Name*</label>
@@ -170,8 +153,8 @@ const AddPlant = () => {
                             className="w-full border border-gray-300 rounded px-3 py-2"
                         >
                             <option value="">Select plant type</option>
-                            {["Tree", "Shrub", "Herb", "Vine", "Grass", "Succulent", "Aquatic", "Other"].map((type) => (
-                                <option key={type}>{type}</option>
+                            {["Tree", "Shrub", "Herb", "Vine", "Grass", "Succulent", "Aquatic", "Other"].map((t) => (
+                                <option key={t}>{t}</option>
                             ))}
                         </select>
                     </div>
@@ -238,18 +221,16 @@ const AddPlant = () => {
                     <div>
                         <label className="block text-sm font-medium mb-1">Seasonal Months</label>
                         <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                            {months.map((month) => (
+                            {months.map((m) => (
                                 <button
-                                    key={month}
+                                    key={m}
                                     type="button"
-                                    onClick={() => handleMonthToggle(month)}
-                                    className={`border rounded px-2 py-1 flex items-center justify-center gap-1 ${formData.seasonalMonths.includes(month)
-                                        ? "bg-green-100 border-green-500"
-                                        : "bg-white"
+                                    onClick={() => handleMonthToggle(m)}
+                                    className={`border rounded px-2 py-1 flex items-center justify-center gap-1 ${formData.seasonalMonths.includes(m) ? "bg-green-100 border-green-500" : "bg-white"
                                         }`}
                                 >
                                     <LuCalendarDays className="text-gray-600" />
-                                    {month}
+                                    {m}
                                 </button>
                             ))}
                         </div>

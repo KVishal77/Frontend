@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Env se lo; local fallback
 export const API_BASE =
-    process.env.REACT_APP_API_URL || "https://api.plantshazam.com/";
+    process.env.REACT_APP_API_URL || "https://api.plantshazam.com";
 
 export async function getSuggestion(plantName) {
     const res = await axios.post(`${API_BASE}/suggest`, { plantName });
