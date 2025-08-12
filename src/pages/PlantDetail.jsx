@@ -12,7 +12,7 @@ export default function PlantDetail() {
             // or if you have /getbyid endpoint, use it
             // here we assume /getbyname for demo
             try {
-                const res = await axios.get(`http://localhost:5000/plant/${id}`);
+                const res = await axios.get(`https://api.plantshazam.com/plant/${id}`);
                 setP(res.data);
             } catch { }
         };

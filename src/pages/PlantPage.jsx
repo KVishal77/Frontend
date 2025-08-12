@@ -13,7 +13,7 @@ function PlantPage() {
             if (!user) return;
 
             try {
-                const res = await axios.get(`http://localhost:5000/plants/${user.uid}`);
+                const res = await axios.get(`https://api.plantshazam.com/plants/${user.uid}`);
                 const found = res.data.find((p) => p.id === id);
                 setPlant(found);
             } catch (err) {

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE = "http://plantshazam-backend.dokply.app";
+const API_BASE = "https://api.plantshazam.com/";
 
 export async function getSuggestion(plantName) {
     const res = await axios.post(`${API_BASE}/suggest`, { plantName });

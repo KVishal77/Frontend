@@ -9,7 +9,7 @@ import { LuCalendarDays } from "react-icons/lu";
 import placeholder from "../assets/placeholder.png";
 
 // Env-based API
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const API_BASE = process.env.REACT_APP_API_URL || "https://api.plantshazam.com/";
 
 const AddPlant = () => {
     const navigate = useNavigate();
@@ -244,8 +244,8 @@ const AddPlant = () => {
                                     type="button"
                                     onClick={() => handleMonthToggle(month)}
                                     className={`border rounded px-2 py-1 flex items-center justify-center gap-1 ${formData.seasonalMonths.includes(month)
-                                            ? "bg-green-100 border-green-500"
-                                            : "bg-white"
+                                        ? "bg-green-100 border-green-500"
+                                        : "bg-white"
                                         }`}
                                 >
                                     <LuCalendarDays className="text-gray-600" />
